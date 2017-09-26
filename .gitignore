@@ -1,6 +1,11 @@
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
+
+db.sqlite3
 
 # C extensions
 *.so
@@ -11,6 +16,8 @@ env/
 build/
 develop-eggs/
 dist/
+wisr/staticfiles
+wisr/static/bundles/
 downloads/
 eggs/
 .eggs/
@@ -20,8 +27,14 @@ parts/
 sdist/
 var/
 *.egg-info/
+node_modules/
 .installed.cfg
+stats.json
+webpack-stats.json
 *.egg
+supervisord.pid
+celerybeat*
+npm-debug*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -42,6 +55,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.hypothesis/
 
 # Translations
 *.mo
@@ -50,14 +64,25 @@ coverage.xml
 # Django stuff:
 *.log
 
+.venv/
+
+# Celery
+celerybeat*
+
 # Sphinx documentation
 docs/_build/
 
 # PyBuilder
 target/
 
-# Redis
-dump.rdb
+# Ipython Notebook
+.ipynb_checkpoints
 
-# vim
+# pyenv
+.python-version
+
 *.swp
+*.swo
+*.swn
+.env
+.static_cache

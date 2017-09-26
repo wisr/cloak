@@ -1,6 +1,6 @@
 import json
 
-from feature_ramp import redis
+from cloak import redis
 
 
 class Feature(object):
@@ -28,7 +28,12 @@ class Feature(object):
     REDIS_VERSION = 1
     REDIS_SET_KEY = 'active_features'
 
-    def __init__(self, feature_name, feature_group_name=None, default_percentage=0):
+    def __init__(
+        self,
+        feature_name,
+        feature_group_name=None,
+        default_percentage=0
+    ):
         self.feature_name = feature_name  # set here so redis_key() works
         self.feature_group_name = feature_group_name
 
@@ -44,7 +49,8 @@ class Feature(object):
         """ Returns true if the feature is visible to the given identifier.
         Whitelisted users are always on even if they are also blacklisted.
         Blacklisted users are always off unless whitelisted.
-        For users neither white or blacklisted, it will respect ramp percentage.
+        For users neither white or blacklisted, it will respect
+        ramp percentage.
         """
 
         if self.is_whitelisted(identifier):
@@ -64,12 +70,16 @@ class Feature(object):
         return self.percentage > 0
 
     def is_whitelisted(self, identifier):
-        """ Given a identifier, returns true if the id is present in the whitelist. """
+        """ Given a identifier, returns true if the id is present
+        in the whitelist.
+        """
 
         return identifier in self.whitelist
 
     def is_blacklisted(self, identifier):
-        """ Given a identifier, returns true if the id is present in the blacklist. """
+        """ Given a identifier, returns true if the id is present
+        in the blacklist.
+        """
 
         return identifier in self.blacklist
 
@@ -97,19 +107,29 @@ class Feature(object):
         feature should be visible to the user with that id, and False
         if not.
         """
-        consistent_offset = hash(self.feature_name) % 100 if not self.feature_group_name else hash(self.feature_group_name)
-        identifier = identifier if isinstance(identifier, basestring) else str(identifier)
+        consistent_offset = (
+            hash(self.feature_name) % 100 if not self.feature_group_name
+            else hash(self.feature_group_name)
+        )
+        identifier = (
+            identifier if isinstance(identifier, basestring)
+            else str(identifier)
+        )
         ramp_ranking = (consistent_offset + hash(identifier)) % 100
 
         return ramp_ranking < self.percentage
 
     def activate(self):
-        """ Ramp feature to 100%. This is a convenience method useful for single-toggle features. """
+        """ Ramp feature to 100%. This is a convenience method useful for
+        single-toggle features.
+        """
 
         self.set_percentage(100)
 
     def deactivate(self):
-        """ Ramp feature to 0%. This is a convenience method useful for single-toggle features. """
+        """ Ramp feature to 0%. This is a convenience method useful for
+        single-toggle features.
+        """
 
         self.set_percentage(0)
 
@@ -133,9 +153,10 @@ class Feature(object):
     def set_percentage(self, percentage):
         """ Ramps the feature to the given percentage.
 
-        If percentage is not a number between 0 and 100 inclusive, ValueError is raised.
-        Calls int() on percentage because we are using modulus to select the users
-        being shown the feature in _is_ramped(); floats will truncated.
+        If percentage is not a number between 0 and 100 inclusive,
+        ValueError is raised. Calls int() on percentage because we are using
+        modulus to select the users being shown the feature in _is_ramped();
+        floats will truncated.
         """
 
         percentage = int(float(percentage))
@@ -146,25 +167,33 @@ class Feature(object):
         self._save()
 
     def add_to_whitelist(self, identifier):
-        """ Whitelist the given identifier to always see the feature regardless of ramp. """
+        """ Whitelist the given identifier to always see the feature
+        regardless of ramp.
+        """
 
         self.whitelist.append(identifier)
         self._save()
 
     def remove_from_whitelist(self, identifier):
-        """ Remove the given identifier from the whitelist to respect ramp percentage. """
+        """ Remove the given identifier from the whitelist to respect
+        ramp percentage.
+        """
 
         self.whitelist.remove(identifier)
         self._save()
 
     def add_to_blacklist(self, identifier):
-        """ Blacklist the given identifier to never see the feature regardless of ramp. """
+        """ Blacklist the given identifier to never see the feature regardless
+        of ramp.
+        """
 
         self.blacklist.append(identifier)
         self._save()
 
     def remove_from_blacklist(self, identifier):
-        """ Remove the given identifier from the blacklist to respect ramp percentage. """
+        """ Remove the given identifier from the blacklist to respect
+        ramp percentage.
+        """
 
         self.blacklist.remove(identifier)
         self._save()
@@ -183,12 +212,15 @@ class Feature(object):
         }
         """
         key = cls._get_redis_set_key()
-        features = [cls._get_feature_name_from_redis_key(rkey) for rkey in redis.smembers(key)]
+        features = [
+            cls._get_feature_name_from_redis_key(rkey)
+            for rkey in redis.smembers(key)
+        ]
         if not include_data:
             return features
 
-        # we intentionally do not use pipelining here, since that would lock Redis and
-        # this does not need to be atomic
+        # we intentionally do not use pipelining here, since that would lock
+        # Redis and this does not need to be atomic
         features_with_data = dict()
         for feature in features:
             data = cls(feature)
@@ -213,7 +245,9 @@ class Feature(object):
         redis.sadd(set_key, key)
 
     def _get_redis_key(self):
-        """ Returns the key used in Redis to store a feature's information, with namespace. """
+        """ Returns the key used in Redis to store a feature's information,
+        with namespace.
+        """
 
         return '{0}.{1}.{2}'.format(Feature.REDIS_NAMESPACE,
                                     Feature.REDIS_VERSION,
@@ -221,18 +255,24 @@ class Feature(object):
 
     @classmethod
     def _get_feature_name_from_redis_key(self, key):
-        """ Returns the feature name given the namespaced key used in Redis. """
+        """ Returns the feature name given the namespaced key used
+        in Redis.
+        """
         return key.split('.')[-1]
 
     @classmethod
     def _get_redis_set_key(cls):
-        """ Returns the key used in Redis to store a feature's information, with namespace. """
+        """ Returns the key used in Redis to store a feature's information,
+        with namespace.
+        """
 
         return '{0}.{1}'.format(Feature.REDIS_NAMESPACE,
                                 Feature.REDIS_SET_KEY)
 
     def _get_redis_data(self):
-        """ Returns the dictionary representation of this object for storage in Redis. """
+        """ Returns the dictionary representation of this object for storage
+        in Redis.
+        """
 
         return {
             'whitelist': self.whitelist,
@@ -241,8 +281,9 @@ class Feature(object):
         }
 
     def _deserialize(self, redis_obj):
-        """ Deserializes the serialized JSON representation of this object's dictionary
-        from Redis. If no object is provided, it returns an empty dictionary.
+        """ Deserializes the serialized JSON representation of this object's
+        dictionary from Redis. If no object is provided, it returns an
+        empty dictionary.
         """
 
         if redis_obj is None:
@@ -253,4 +294,12 @@ class Feature(object):
     def __str__(self):
         """ Pretty print the feature and some stats """
         stats = self._get_redis_data()
-        return "Feature: {0}\nwhitelisted: {1}\nblacklisted: {2}\npercentage: {3}\n".format(self.feature_name, stats['whitelist'], stats['blacklist'], stats['percentage'])
+        return """Feature: {0}\n
+whitelisted: {1}\n
+blacklisted: {2}\n
+percentage: {3}\n""".format(
+            self.feature_name,
+            stats['whitelist'],
+            stats['blacklist'],
+            stats['percentage']
+        )

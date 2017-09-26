@@ -1,13 +1,12 @@
 import itertools
 import string
+import unittest
 
-from unittest2 import TestCase
-
-from feature_ramp import redis
-from feature_ramp.Feature import Feature
+from cloak import redis
+from cloak.feature import Feature
 
 
-class FeatureTest(TestCase):
+class FeatureTest(unittest.TestCase):
     """ Tests the feature ramping system in Redis. """
 
     def setUp(self):
@@ -49,7 +48,9 @@ class FeatureTest(TestCase):
         self.assertFalse(redis.sismember(set_key, key))
 
     def test_all_features(self):
-        """ Tests that the method returns a list of all feature names activated. """
+        """ Tests that the method returns a list of all feature
+        names activated.
+        """
         to_create = ['looktest1', 'looktest2', 'looktest3']
         for f in to_create:
             Feature(f).activate()
@@ -60,7 +61,9 @@ class FeatureTest(TestCase):
             self.assertTrue(f in all_features)
 
     def test_all_features_with_data(self):
-        """ Tests that the method returns the correct data with activated features. """
+        """ Tests that the method returns the correct data with
+        activated features.
+        """
         feature1 = Feature('looktest1')
         feature1.set_percentage(5)
 
@@ -82,7 +85,7 @@ class FeatureTest(TestCase):
         all_features = Feature.all_features(include_data=True)
         self.assertEqual(len(all_features), 4)
 
-        for key in ['looktest1','looktest2','looktest3','looktest4']:
+        for key in ['looktest1', 'looktest2', 'looktest3', 'looktest4']:
             self.assertTrue(key in all_features)
             if not key == 'looktest1':
                 self.assertEqual(all_features[key]['percentage'], 100)
@@ -97,7 +100,7 @@ class FeatureTest(TestCase):
 
         self.assertFalse('whitelist' in all_features['looktest3'])
         self.assertTrue('blacklist' in all_features['looktest3'])
-        self.assertEqual(all_features['looktest3']['blacklist'], [4,5])
+        self.assertEqual(all_features['looktest3']['blacklist'], [4, 5])
 
         self.assertTrue('whitelist' in all_features['looktest4'])
         self.assertEqual(all_features['looktest4']['whitelist'], [3, 5])
@@ -120,20 +123,26 @@ class FeatureTest(TestCase):
         self.assertEqual(Feature("testing").percentage, 5)
 
     def test_set_float_percentage(self):
-        """ Tests that calling set_percentage() with a float truncates to int. """
+        """ Tests that calling set_percentage() with a float truncates
+        to int.
+        """
 
         self.feature_test.set_percentage(50.5)
         self.assertEqual(self.feature_test.percentage, 50)
 
     def test_set_string_percentage(self):
-        """ Tests that calling set_percentage() with a string converts it to an int if possible. """
+        """ Tests that calling set_percentage() with a string converts it to
+        an int if possible.
+        """
 
         self.feature_test.set_percentage("50")
         self.assertEqual(self.feature_test.percentage, 50)
         self.assertTrue(isinstance(self.feature_test.percentage, int))
 
     def test_set_invalid_string_percentage(self):
-        """ Tests that calling set_percentage() on an invalid percentage raises ValueError. """
+        """ Tests that calling set_percentage() on an invalid percentage
+        raises ValueError.
+        """
 
         with self.assertRaises(ValueError):
             self.feature_test.set_percentage("meow")
@@ -218,7 +227,9 @@ class FeatureTest(TestCase):
         self.assertTrue(self.feature_test.is_visible(3))
 
     def test_visible_whitelisted_with_string(self):
-        """ Tests calling is_visible with string is correct when whitelisted. """
+        """ Tests calling is_visible with string is correct
+        when whitelisted.
+        """
         email = 'example@example.com'
         self.feature_test.set_percentage(0)
         self.feature_test.add_to_whitelist(email)
@@ -232,14 +243,18 @@ class FeatureTest(TestCase):
         self.assertFalse(self.feature_test.is_visible(3))
 
     def test_visible_blacklisted_with_string(self):
-        """ Tests calling is_visible with string is correct when blacklisted. """
+        """ Tests calling is_visible with string is correct
+        when blacklisted.
+        """
         email = 'example@example.com'
         self.feature_test.set_percentage(0)
         self.feature_test.add_to_blacklist(email)
         self.assertFalse(self.feature_test.is_visible(email))
 
     def test_visible_white_and_blacklisted(self):
-        """ Tests calling is_visible is correct when both white and blacklisted. """
+        """ Tests calling is_visible is correct when both white
+        and blacklisted.
+        """
 
         self.feature_test.set_percentage(0)
         self.feature_test.add_to_whitelist(3)
@@ -247,7 +262,9 @@ class FeatureTest(TestCase):
         self.assertTrue(self.feature_test.is_visible(3))
 
     def test_visible_white_and_blacklisted_with_string(self):
-        """ Tests calling is_visible is correct when both white and blacklisted. """
+        """ Tests calling is_visible is correct when both white
+        and blacklisted.
+        """
         email = 'example@example.com'
         self.feature_test.set_percentage(0)
         self.feature_test.add_to_whitelist(email)
@@ -271,7 +288,9 @@ class FeatureTest(TestCase):
         visibility_count = visibility_map.count(True)
         # This should match 10%.
         actual_percentage = visibility_count / float(total_number)
-        self.assertAlmostEqual(actual_percentage, expected_percentage, delta=.012)
+        self.assertAlmostEqual(
+            actual_percentage, expected_percentage, delta=.012
+        )
 
     def test_visible_ramp_using_string(self):
         """Tests calling is_visible when using string as identifier is
@@ -289,13 +308,14 @@ class FeatureTest(TestCase):
         visibility_count = visibility_map.count(True)
         # This should match 10%.
         actual_percentage = visibility_count / float(total_number)
-        self.assertAlmostEqual(actual_percentage, expected_percentage, delta=.012)
+        self.assertAlmostEqual(
+            actual_percentage, expected_percentage, delta=.012
+        )
 
     def test_is_ramped_using_int(self):
         """Tests that _is_ramped accepts integers as identifer."""
         self.feature_test.set_percentage(100)
         self.assertTrue(self.feature_test._is_ramped(5))
-
 
     def test_is_ramped_using_string(self):
         """Tests that _is_ramped accepts strings as identifier."""
@@ -323,10 +343,15 @@ class FeatureTest(TestCase):
 
         identifiers = range(1, 10001)
 
-        visibility_test_one = [id for id in identifiers
-                                if feature_one.is_visible(id)]
+        visibility_test_one = [
+            id for id in identifiers if feature_one.is_visible(id)
+        ]
 
-        visibility_test_two = [id for id in identifiers
-                                if feature_two.is_visible(id)]
+        visibility_test_two = [
+            id for id in identifiers if feature_two.is_visible(id)
+        ]
 
         self.assertEqual(visibility_test_one, visibility_test_two)
+
+if __name__ == '__main__':
+    unittest.main()
