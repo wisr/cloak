@@ -1,6 +1,5 @@
 import json
-
-from cloak import redis
+import cloak
 
 
 class Feature(object):
@@ -38,7 +37,7 @@ class Feature(object):
         self.feature_group_name = feature_group_name
 
         key = self._get_redis_key()
-        redis_raw = redis.get(key)
+        redis_raw = cloak.redis.get(key)
         redis_data = self._deserialize(redis_raw)
 
         self.whitelist = redis_data.get('whitelist', [])
@@ -147,8 +146,8 @@ class Feature(object):
         """ Deletes the feature settings from Redis entirely. """
 
         key = self._get_redis_key()
-        redis.delete(key)
-        redis.srem(Feature._get_redis_set_key(), key)
+        cloak.redis.delete(key)
+        cloak.redis.srem(Feature._get_redis_set_key(), key)
 
     def set_percentage(self, percentage):
         """ Ramps the feature to the given percentage.
@@ -214,7 +213,7 @@ class Feature(object):
         key = cls._get_redis_set_key()
         features = [
             cls._get_feature_name_from_redis_key(rkey)
-            for rkey in redis.smembers(key)
+            for rkey in cloak.redis.smembers(key)
         ]
         if not include_data:
             return features
@@ -237,12 +236,12 @@ class Feature(object):
 
         key = self._get_redis_key()
         value = json.dumps(self._get_redis_data())
-        redis.set(key, value)
+        cloak.redis.set(key, value)
 
         # store feature key in a set so we know what's turned on without
         # needing to search all Redis keys with a * which is slow.
         set_key = Feature._get_redis_set_key()
-        redis.sadd(set_key, key)
+        cloak.redis.sadd(set_key, key)
 
     def _get_redis_key(self):
         """ Returns the key used in Redis to store a feature's information,

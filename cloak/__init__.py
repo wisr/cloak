@@ -1,3 +1,10 @@
-import redis
+redis = None
 
-redis = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+def initialize(conn):
+    global redis
+
+    if not conn:
+        raise ValueError("Must provide a redis connection")
+
+    redis = conn

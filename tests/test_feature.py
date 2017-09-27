@@ -1,8 +1,9 @@
 import itertools
 import string
 import unittest
+import redis
+import cloak
 
-from cloak import redis
 from cloak.feature import Feature
 
 
@@ -10,6 +11,8 @@ class FeatureTest(unittest.TestCase):
     """ Tests the feature ramping system in Redis. """
 
     def setUp(self):
+        redis_conn = redis.StrictRedis(host='localhost', port=6379, db=0)
+        cloak.initialize(redis_conn)
         self.feature_test = Feature("testing")
 
     def tearDown(self):
@@ -41,11 +44,11 @@ class FeatureTest(unittest.TestCase):
         self.feature_test.set_percentage(5)
         self.feature_test.delete()
         key = self.feature_test._get_redis_key()
-        redis_data = redis.get(key)
+        redis_data = cloak.redis.get(key)
         self.assertTrue(redis_data is None)
 
         set_key = Feature._get_redis_set_key()
-        self.assertFalse(redis.sismember(set_key, key))
+        self.assertFalse(cloak.redis.sismember(set_key, key))
 
     def test_all_features(self):
         """ Tests that the method returns a list of all feature
@@ -113,7 +116,7 @@ class FeatureTest(unittest.TestCase):
         self.feature_test.set_percentage(15)
         key = self.feature_test._get_redis_key()
         set_key = Feature._get_redis_set_key()
-        self.assertTrue(redis.sismember(set_key, key))
+        self.assertTrue(cloak.redis.sismember(set_key, key))
 
     def test_set_percentage(self):
         """ Tests calling set_percentage sets the correct
