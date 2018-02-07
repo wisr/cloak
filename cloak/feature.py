@@ -1,5 +1,8 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import json
 import cloak
+import six
 
 
 class Feature(object):
@@ -111,7 +114,7 @@ class Feature(object):
             else hash(self.feature_group_name)
         )
         identifier = (
-            identifier if isinstance(identifier, basestring)
+            identifier if isinstance(identifier, six.string_types)
             else str(identifier)
         )
         ramp_ranking = (consistent_offset + hash(identifier)) % 100
@@ -253,11 +256,17 @@ class Feature(object):
                                     self.feature_name)
 
     @classmethod
-    def _get_feature_name_from_redis_key(self, key):
+    def _get_feature_name_from_redis_key(cls, key):
         """ Returns the feature name given the namespaced key used
         in Redis.
         """
-        return key.split('.')[-1]
+
+        try:
+            feature_name = key.split('.')[-1]
+        except TypeError:
+            feature_name = key.decode().split('.')[-1]
+
+        return feature_name
 
     @classmethod
     def _get_redis_set_key(cls):

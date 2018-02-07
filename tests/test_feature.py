@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import itertools
 import string
 import unittest
@@ -5,6 +6,7 @@ import redis
 import cloak
 
 from cloak.feature import Feature
+from six.moves import range
 
 
 class FeatureTest(unittest.TestCase):
@@ -281,7 +283,7 @@ class FeatureTest(unittest.TestCase):
         self.feature_test.set_percentage(expected_percentage * 100)
         # Generate a range of user ids and map these ids to the feature
         # test result.
-        user_ids = range(1, total_number + 1)
+        user_ids = list(range(1, total_number + 1))
         visibility_map = [
             self.feature_test.is_visible(user_id)
             for user_id
@@ -299,7 +301,12 @@ class FeatureTest(unittest.TestCase):
         """Tests calling is_visible when using string as identifier is
         correct when partially ramped.
         """
-        identifiers = list(itertools.product(string.lowercase, repeat=3))
+        try:
+            lowercase_letters = string.ascii_lowercase
+        except AttributeError:
+            lowercase_letters = string.lowercase
+
+        identifiers = list(itertools.product(lowercase_letters, repeat=3))
         total_number = len(identifiers)
         expected_percentage = .10
         self.feature_test.set_percentage(expected_percentage * 100)
@@ -344,7 +351,7 @@ class FeatureTest(unittest.TestCase):
         feature_one.set_percentage(10)
         feature_two.set_percentage(10)
 
-        identifiers = range(1, 10001)
+        identifiers = list(range(1, 10001))
 
         visibility_test_one = [
             id for id in identifiers if feature_one.is_visible(id)
@@ -355,6 +362,7 @@ class FeatureTest(unittest.TestCase):
         ]
 
         self.assertEqual(visibility_test_one, visibility_test_two)
+
 
 if __name__ == '__main__':
     unittest.main()
